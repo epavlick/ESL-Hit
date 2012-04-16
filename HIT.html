@@ -1,0 +1,193 @@
+<style type="text/css">
+div.correct {
+	background-color: #FFFFFF;
+}
+
+div.highlight {
+	background-color: yellow;
+}
+
+div.tmp_highlight {
+	background-color: lightgreen;
+}
+
+div.highlight_for_deletion {
+	background-color: red;
+}
+
+div.hover {
+	background-color: grey;
+}
+
+/*from http://www.elated.com/articles/drag-and-drop-with-jquery-your-essential-guide/ tutorial */
+div.space {
+	width: 12px;
+	height: 30px;
+	padding: 2px;
+	border: 2px solid #333;
+	border-style: dashed;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+}
+
+div.word {
+	padding: 4px;
+	border: 2px solid #333;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+	-moz-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	-webkit-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	font-size: 16px;
+	text-align: center;
+}
+
+div.corrected_word {
+	padding: 4px;
+	border: 2px solid #333;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+	-moz-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	-webkit-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	font-size: 16px;
+	text-align: center;
+}
+
+button {
+	padding: 6px;
+	border: 1px solid #333;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+	-moz-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	-webkit-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	box-shadow: 0 0 .3em rgba(0, 0, 0, .8); */
+	font-size: 16px;
+	background-color: #FFFFFF;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+	-moz-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	-webkit-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+	box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+}
+
+button.clicked {
+	background-color: lightblue;
+}
+
+button.hover {
+	background-color: lightblue;
+}
+
+select {
+	background-color: #FFFFFF;
+}
+
+input {
+	background-color: #FFFFFF;
+}
+
+input.img {
+	background-colo: red;
+}
+
+A:link {
+	text-decoration: none;
+	color: black;
+}
+
+A:visited {
+	text-decoration: none;
+	color: black;
+}
+
+A:active {
+	text-decoration: none;
+	color: black;
+}
+
+A:hover {
+	text-decoration: none;
+	color: black;
+}
+
+body {
+	color: black;
+	font-size: 16px;
+}
+//
+</style>
+<!--progress bar from http://caffeinatedcode.wordpress.com/2008/04/08/simple-javascript-progress-bar/-->
+<table cols=3>
+	<tr>
+		<td width="15%">
+			<div id="progressText">Sentence 1 out of 10</div>
+		</td>
+		<td width="75%"><div id="progress"
+				style="border: 1px solid black;">
+				<div id="progressBar"
+					style="background-color: lightblue; width: 10%">&nbsp;</div>
+			</div></td>
+		<td width="10%">
+			<button id="button1" align="right" onClick="return nextSentence()">Next
+				Sentence</button>
+		</td>
+	</tr>
+</table>
+
+<h4 id="orig" align="center">Original Sentence</h4>
+<br>
+<!--  What are the different types of errors? <img id="help" src="http://www.homeserviceworld.com/images/vautomulti/icon_question_mark.png"></img>
+-->
+<link
+	href="http://ajax.googleapis.com/ajax
+	/libs/jqueryui/1.8/themes/base/jquery-ui.css"
+	rel="stylesheet" type="text/css" />
+<script
+	src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+<script
+	src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+<script type="text/javascript" src="jquery.qtip-1.0.0-rc3.min.js"></script>
+
+<script type="text/javascript" src="ESLHIT.js"></script>
+
+<p>Thanks for doing our HIT! Please provide any comments that you
+	have about this HIT. We appreciate your input!</p>
+<p>
+	<textarea rows="4" cols="80" name="comment" id="commentBox"> </textarea>
+	&nbsp;
+</p>
+
+<p>
+	<input type="hidden" name="userDisplayLanguage" /> <input
+		type="hidden" name="browserInfo" /> <input type="hidden"
+		name="ipAddress" /> <input type="hidden" name="country" /> <input
+		type="hidden" name="city" /> <input type="hidden" name="region" />
+</p>
+<!--
+<script type="text/javascript"
+	src="http://gd.geobytes.com/gd?after=-1&variables=GeobytesCountry,GeobytesCity,GeobytesRegion,GeobytesIpAddress"></script>
+ <script type="text/javascript">function getUserInfo() {
+	var userDisplayLanguage = navigator.language ? navigator.language : navigator.userDisplayLanguage;
+	var browserInfo = navigator.userAgent;
+	var country = sGeobytesCountry;
+	var city = sGeobytesCity;
+	var region = sGeobytesRegion;
+
+	document.mturk_form.userDisplayLanguage.value = userDisplayLanguage;
+	document.mturk_form.browserInfo.value = browserInfo;
+	document.mturk_form.country.value = country;
+	document.mturk_form.city.value = city;
+	document.mturk_form.region.value = region;
+}
+
+getUserInfo();
+ -->
+</script>
+
+
