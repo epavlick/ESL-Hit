@@ -57,6 +57,23 @@ div.corrected_word {
 	text-align: center;
 }
 
+div.edited {
+	text-align: center;
+}
+
+div.orig {
+	text-align: center;
+}
+
+div.active {
+	color: #0066FF;
+	font-weight: bold;
+}
+
+div.inactive {
+	color: grey;
+}
+
 button {
 	padding: 6px;
 	border: 1px solid #333;
@@ -123,23 +140,124 @@ body {
 //
 </style>
 <!--progress bar from http://caffeinatedcode.wordpress.com/2008/04/08/simple-javascript-progress-bar/-->
-<table cols=3>
-	<tr>
-		<td width="15%">
-			<div id="progressText">Sentence 1 out of 10</div>
-		</td>
-		<td width="75%"><div id="progress"
-				style="border: 1px solid black;">
-				<div id="progressBar"
-					style="background-color: lightblue; width: 10%">&nbsp;</div>
-			</div></td>
-		<td width="10%">
-			<button id="button1" align="right" onClick="return nextSentence()">Next
-				Sentence</button>
-		</td>
-	</tr>
-</table>
+<center>
+	<table cols=4>
+		<tr>
+			<td width="10%" align="center">
+				<button id="buttonP" align="right" onClick="return prevSentence()">Previous
+					Sentence</button>
+			</td><td></td><td></td>
+			<td width="10%">
+				<button id="buttonN" align="right" onClick="return nextSentence()">Next
+					Sentence</button>
+			</td>
+		</tr><tr>
+		<td colspan=2 width="50%">
+				<div align="center">Original Sentence</div>
+			</td>
+			<td colspan=2 width="50%">
+				<div align="center">Your Edits</div>
+			</td></tr>
+		<tr>
+			<td colspan=2 width="50%">
+				<div class="orig" id="sent0" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+				<div class="edited" id="edit0" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
 
+				<div class="orig" id="sent1" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit1" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent2" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit2" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent3" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit3" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent4" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit4" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent5" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit5" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent6" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit6" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent7" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit7" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent8" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit8" align="left">Sentences</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan=2 width="50%">
+
+				<div class="orig" id="sent9" align="left">Sentences</div>
+			</td>
+			<td colspan=2 width="50%">
+
+				<div class="edited" id="edit9" align="left">Sentences</div>
+			</td>
+		</tr>
+	</table>
+</center>
 <h4 id="orig" align="center">Original Sentence</h4>
 <br>
 <!--  What are the different types of errors? <img id="help" src="http://www.homeserviceworld.com/images/vautomulti/icon_question_mark.png"></img>
@@ -156,8 +274,8 @@ body {
 
 <script type="text/javascript" src="ESLHIT.js"></script>
 
-<p>Thanks for doing our HIT! Please provide any comments that you
-	have about this HIT. We appreciate your input!</p>
+<p id="HITend">Thanks for doing our HIT! Please provide any comments
+	that you have about this HIT. We appreciate your input!</p>
 <p>
 	<textarea rows="4" cols="80" name="comment" id="commentBox"> </textarea>
 	&nbsp;

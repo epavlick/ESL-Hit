@@ -18,6 +18,8 @@ var words = [ [], [], [], [], [], [], [], [], [], [] ];
 var step_list = [ 'spelling', 'prepositions', 'determiners', 'agreement',
 		'verbs', 'awk_phrases', 'reorder' ];
 
+var visited = [];
+
 var steps = new Array();
 steps['Spelling'] = 'spelling';
 steps['Preposition'] = 'prepositions';
@@ -157,11 +159,11 @@ explanations["Determiner-Agreement"] = "<center><table border=2 width=100% cells
 		+ "<i>Correction: </i>There were too <b>many people</b> in the crowd.</td></tr>";
 
 var curr_sentence = 0;
-var num_corr = 0;
 var num_entered = 0;
 var num_highlighted = 0;
 var span_start = -1;
 var span_start2 = -1;
+var span_anchor = -1;
 var insert_idx = -1;
 var revert_word = "";
 var last_corrected = "";
@@ -178,6 +180,8 @@ var first_word = true;
 var in_progress = false;
 var option_chosen = false;
 var input_displayed = false;
+var forward_highlighting = true;
+var num_corr = 0; 
 
 /**
  * Initalizes the arrays that store the space-delimited words, and the boolean
@@ -298,19 +302,42 @@ function getHelp() {
 
 }
 
+function writeOriginalSentences() {
+	for ( var s = 0; s < sentences.length; s++) {
+		$("#sent" + s).text(sentences[s]);
+	}
+}
+
 function updateTab() {
 	var txt = "";
 	txt += writeSentence(curr_sentence);
 	$("#orig").html(txt);
 	$(".space").hide();
-	if (new_sentence) {
-		$(".correction").text("");
-		var tbl = "";
-		tbl += writeCorrectionsTable();
-		$("#orig").after(tbl);
-		hideCorrectionsTable();
-		new_sentence = false;
+	for ( var s = 0; s < sentences.length; s++) {
+		if (visited[s]) {
+			$("#edit" + s).text(sentences[s]);
+		} else {
+			$("#edit" + s).text("Incomplete");
+		}
 	}
+	$(".orig").each(function() {
+		if ($(this).attr('id') == "sent" + curr_sentence) {
+			$(this).removeClass("inactive");
+			$(this).addClass("active");
+		} else {
+			$(this).removeClass("active");
+			$(this).addClass("inactive");
+		}
+	});
+	$(".edited").each(function() {
+		if ($(this).attr('id') == "edit" + curr_sentence) {
+			$(this).removeClass("inactive");
+			$(this).addClass("active");
+		} else {
+			$(this).removeClass("active");
+			$(this).addClass("inactive");
+		}
+	});
 	$("input").keypress(function(e) {
 		var key;
 		if (window.event) {
@@ -373,6 +400,7 @@ function writeSentence(i) {
 			text += '</div> </td>';
 		}
 	}
+	text += '<td><div class="space" id="' + words[i].length + '"> </div></td>';
 	text += '</tr></table>';
 	return text;
 }
@@ -384,14 +412,15 @@ function writeSentence(i) {
 function writeCorrectionsTable() {
 	var text = '';
 	text += '<table>';
-	for ( var i = 0; i < 100; i++) {
-		text += '<tr class="hidden" id="C' + i + '">';
-		text += '<td><div class="corrected_word"' + 'id="textC' + i + '">'
-				+ "text" + i + '</div></td>';
-		text += '</tr>';
-	}
+	var i = num_corr;
+	text += '<tr class="hidden" id="C' + i + '">';
+	text += '</tr>';
 	text += '</table>';
-	return text;
+	if (num_corr == 0) {
+		$("#HITend").before(text);
+	} else {
+		$("#C" + (num_corr - 1)).before(text);
+	}
 }
 
 function updateTables() {
@@ -430,7 +459,6 @@ function commitInsert() {
 	sentences[curr_sentence] = insertWord(insert_idx, $("#inputC" + num_corr)
 			.val());
 	words[curr_sentence] = sentences[curr_sentence].split(/\s/);
-	updateTables();
 	updateTab();
 	insert();
 }
@@ -725,6 +753,7 @@ function generalClick(id) {
 }
 
 function correctionUI() {
+	$("#early_cancel" + num_corr).hide();
 	var txt = "";
 	$(".word").each(function() {
 		if ($(this).hasClass("highlight")) {
@@ -745,7 +774,6 @@ function correctionUI() {
 	} else {
 		text = '<td id="corr_text' + num_corr + '">';
 	}
-
 	text += promptForType();
 	text += getButtons();
 	$('#C' + num_corr).after(text);
@@ -785,7 +813,15 @@ function moveClick() {
 	$("#step_buttons" + num_corr).hide();
 	$("#step_text" + num_corr).hide();
 	$("#qmark" + num_corr).hide();
-	// $("#move" + num_corr).after(getButtons());
+	$(".space").each(
+			function() {
+				// check to make sure no contiguous spaces
+				var space_num = $(this).attr('id');
+				if (space_num < span_start
+						|| space_num > span_start + num_highlighted) {
+					$(this).show();
+				}
+			});
 	correctionUI();
 	moving_phrase = true;
 	$("#enter" + num_corr).show();
@@ -854,7 +890,6 @@ function stepButtons(txt) {
 		text += '<td><div class="corrected_word" id="step_text' + num_corr
 				+ '">' + txt + '</div></td><td><div id="qmark' + num_corr
 				+ '"> ? </div></td>';
-		text += '</td>';
 	} else {
 		text = '<td id = "step_buttons' + num_corr + '">';
 		text += '<button class="option" id="change' + num_corr + '">';
@@ -863,13 +898,18 @@ function stepButtons(txt) {
 		text += '<td><div class="corrected_word" id="step_text' + num_corr
 				+ '">' + txt + '</div></td><td><div id="qmark' + num_corr
 				+ '"> ? </div></td>';
-		text += '</td>';
 	}
+	text += '<td><button class = "finish" id="early_cancel'
+			+ num_corr
+			+ '"'
+			+ 'onclick="return cancel()" onsubmit="return cancel()">'
+			+ '<img src="http://www.developmentgateway.org/sites/all/themes/corporate/images/cancel_icon.gif"></img>Cancel</button></td></td>';
 	return text;
 }
 
 function displayChoices() {
 	if (!in_progress) {
+		writeCorrectionsTable();
 		var txt = "";
 		$(".highlight").each(function() {
 			txt += $(this).text() + " ";
@@ -880,6 +920,7 @@ function displayChoices() {
 		}
 		$("#C" + num_corr).show();
 		$("#C" + num_corr).append(stepButtons(txt));
+		$('#enter' + num_corr).hide();
 		$("#delete" + num_corr).click(function() {
 			if (!option_chosen) {
 				deleteClick();
@@ -907,6 +948,12 @@ function displayChoices() {
 		$(".option").mouseout(function() {
 			$(this).removeClass("hover");
 		});
+		$(".finish").mouseover(function() {
+			$(this).addClass("hover");
+		});
+		$(".finish").mouseout(function() {
+			$(this).removeClass("hover");
+		});
 		in_progress = true;
 	}
 }
@@ -922,9 +969,6 @@ function onClick(i, j) {
 				span_start = j;
 			} else {
 				clicked_word = false;
-			/*	if (j < span_start) {
-					span_start = j;
-				}*/
 				span_start2 = j;
 				commitHighlights();
 				displayChoices();
@@ -937,9 +981,18 @@ function onClick(i, j) {
 		} else if (highlighting_mode == "phrase") {
 			if (!clicked_word) {
 				span_start = j;
+				span_anchor = j;
 				num_highlighted = 1;
 				clicked_word = true;
 			} else {
+				if (num_highlighted == 1) {
+					highlighting_mode = "word";
+					$('#wordButton').attr('disabled', true);
+					$('#phraseButton').attr('disabled', false);
+					$("#wordButton").addClass('clicked');
+					$("#phraseButton").removeClass('clicked');
+					$("#phraseButton").removeClass('hover');
+				}
 				commitHighlights();
 				displayChoices();
 				clicked_word = false;
@@ -987,12 +1040,12 @@ function getButtons() {
 			+ num_corr
 			+ '"'
 			+ 'onclick="return correctWord()" onsubmit="return correctWord()">'
-			+ '<img src="http://apps.vendio.com/img/corp/icon_checkmark.gif"></img>Submit</button>'
+			+ '<img src="http://www.harddrivesdirect.com/images/icon_checkmark.gif"></img>Submit</button>'
 			+ '<button class = "finish" id="cancel'
 			+ num_corr
 			+ '"'
 			+ 'onclick="return cancel()" onsubmit="return cancel()">'
-			+ '<img src="http://gfx.esl.eu/gfx/media/de/tf2/icon_cancel.gif"></img>Cancel</button>';
+			+ '<img src="http://www.developmentgateway.org/sites/all/themes/corporate/images/cancel_icon.gif"></img>Cancel</button>';
 }
 
 function onBlur() {
@@ -1052,32 +1105,74 @@ function reorderInstructions(action) {
 	});
 }
 
+function addTmpHighlightsToSpan(i, j) {
+	var added = 0;
+	if (j > span_start) {
+		if (!forward_highlighting) {
+			forward_highlighting = true;
+			for ( var k = span_start; k < span_anchor; k++) {
+				$("#word_" + i + "_" + k).removeClass("tmp_highlight");
+			}
+			num_highlighted = 1;
+			span_start = span_anchor;
+		}
+		for ( var k = span_anchor + num_highlighted; k <= j; k++) {
+			$("#word_" + i + "_" + k).addClass("tmp_highlight");
+			added += 1;
+		}
+		num_highlighted += added;
+	} else {
+		if (forward_highlighting) {
+			forward_highlighting = false;
+			for ( var k = span_anchor; k <= span_anchor + num_highlighted; k++) {
+				$("#word_" + i + "_" + k).removeClass("tmp_highlight");
+			}
+			num_highlighted = 1;
+			span_start = j;
+		}
+		if (j < span_start) {
+			span_start = j;
+		}
+		for ( var k = j; k <= span_anchor; k++) {
+			$("#word_" + i + "_" + k).addClass("tmp_highlight");
+			added += 1;
+		}
+		num_highlighted += added;
+	}
+}
+
+function removeTmpHighlightsFromSpan(i, j) {
+	var removed = 0;
+	if (j > span_start) {
+		if (forward_highlighting) {
+			for ( var k = j; k <= span_anchor + num_highlighted; k++) {
+				$("#word_" + i + "_" + k).removeClass("tmp_highlight");
+				removed += 1;
+			}
+			num_highlighted -= removed;
+		} else {
+			if (!forward_highlighting) {
+				for ( var k = span_start; k <= j; k++) {
+					$("#word_" + i + "_" + k).removeClass("tmp_highlight");
+					removed += 1;
+				}
+				num_highlighted -= removed;
+			}
+		}
+	}
+}
+
 /**
  * This method specifies action to take when mousing over word j in sentence i.
  */
 function mouseOverWord(i, j) {
+	var word = $("#word_" + i + "_" + j);
 	if (!in_progress && highlighting_mode != "insert") {
-		clear_tmp_highlights();
-		var word = $("#word_" + i + "_" + j);
 		if (highlighting_mode == "phrase" && clicked_word) {
 			if (word.hasClass('tmp_highlight')) {
-				if (j > span_start) {
-					var removed = 0;
-					for ( var k = j; k <= span_start + num_highlighted; k++) {
-						$("#word_" + i + "_" + k).removeClass("tmp_highlight");
-						removed += 1;
-					}
-					num_highlighted -= removed;
-				}
+				removeTmpHighlightsFromSpan(i, j);
 			} else {
-				var added = 0;
-				if (j > span_start) {
-					for ( var k = span_start + num_highlighted; k <= j; k++) {
-						$("#word_" + i + "_" + k).addClass("tmp_highlight");
-						added += 1;
-					}
-					num_highlighted += added;
-				}
+				addTmpHighlightsToSpan(i, j);
 			}
 		} else {
 			word.toggleClass("tmp_highlight");
@@ -1096,14 +1191,24 @@ function leaveWord(i, j) {
 }
 
 function nextSentence() {
-	if (curr_sentence + 1 < sentences.length) {
-		curr_sentence++;
-		$("#progressText").text(
-				"Sentence " + (curr_sentence + 1) + " out of 10");
-		var w = ((curr_sentence + 1) * 10) + "%";
-		$("#progressBar").width(w);
-		new_sentence = true;
-		updateTab();
+	if (!in_progress) {
+		if (curr_sentence + 1 < sentences.length) {
+			curr_sentence++;
+			visited[curr_sentence] = true;
+			new_sentence = true;
+			updateTab();
+		}
+	}
+	return false;
+}
+
+function prevSentence() {
+	if (!in_progress) {
+		if (curr_sentence > 0) {
+			curr_sentence--;
+			new_sentence = true;
+			updateTab();
+		}
 	}
 	return false;
 }
@@ -1168,24 +1273,6 @@ function compileCorrections(i) {
 }
 
 function getTrackChangesTable(id) {
-	/*var text = '<table>';
-	text += '<input type="hidden" name = "corr-' + id + '-num" id="corr-' + id
-			+ '-num" />';
-	text += '<input type="hidden" name = "corr-' + id + '-sentence" id="corr-'
-			+ id + '-sent" />';
-	text += '<input type="hidden" name = "corr-' + id + '-spanst" id="corr-'
-			+ id + '-spanst" />';
-	text += '<input type="hidden" name = "corr-' + id + '-spanend" id="corr-'
-			+ id + '-spanend" />';
-	text += '<input type="hidden" name = "corr-' + id + '-oldword" id="corr-'
-			+ id + '-oldwd" />';
-	text += '<input type="hidden" name = "corr-' + id + '-newword" id="corr-'
-			+ id + '-newwd" />';
-	text += '<input type="hidden" name = "corr-' + id + '-errtype" id="corr-'
-			+ id + '-type" />';
-	text += '<input type="hidden" name = "corr-' + id + '-pos" id="corr-' + id
-			+ '-type" />';
-	text += '</table>';*/
 	var text = '<table>';
 	text += '<input type="hidden" name = "corr-' + id + '-num" id="corr-' + id
 			+ '-num" />';
@@ -1221,10 +1308,12 @@ function trackChanges(id, j) {
 	var wd2 = $("#inputC" + id + "_b").val();
 	if (highlighting_mode == "pair") {
 		var pair = txt.split("...");
-		$("#" + cid + "-oldword").val(pair[0]+", "+pair[1]);
+		$("#" + cid + "-oldword").val(pair[0] + ", " + pair[1]);
 		$("#" + cid + "-newword").val(wd1 + ", " + wd2);
-		$("#" + cid + "-spanst").val(span_start+", "+span_start2);
-		$("#" + cid + "-spanend").val((span_start + num_highlighted)+", "+(span_start2 + num_highlighted));
+		$("#" + cid + "-spanst").val(span_start + ", " + span_start2);
+		$("#" + cid + "-spanend").val(
+				(span_start + num_highlighted) + ", "
+						+ (span_start2 + num_highlighted));
 
 	} else {
 		$("#" + cid + "-newword").val(wd1);
@@ -1243,7 +1332,7 @@ function insert() {
 		$(this).removeClass("tmp_highlight");
 		$(this).addClass("highlight");
 		insert_idx = $(this).attr('id');
-		$("#C" + num_corr).show();
+		writeCorrectionsTable();
 		correctionUI();
 		onBlur();
 		$(".finish").mouseover(function() {
@@ -1305,4 +1394,11 @@ $(document).ready(function() {
 });
 highlighting_mode = "word";
 current_step = "spelling";
+for ( var i = 0; i < sentences.length; i++) {
+	visited[i] = false;
+}
+visited[0] = true;
+if (curr_sentence == 0) {
+	writeOriginalSentences();
+}
 updateTab();
